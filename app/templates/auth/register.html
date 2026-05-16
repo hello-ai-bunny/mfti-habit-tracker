@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card auth-card">
+            <div class="card-body p-4">
+                <div class="auth-title">Создать аккаунт</div>
+                <div class="auth-subtitle">Бесплатно, без email — только имя и пароль.</div>
+
+                {% if error %}
+                    <div class="alert alert-danger py-2">{{ error }}</div>
+                {% endif %}
+
+                <form method="post" action="/register">
+                    <div class="mb-3">
+                        <label class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control" name="username"
+                               value="{{ username or '' }}" required minlength="3" maxlength="50" autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Пароль</label>
+                        <input type="password" class="form-control" name="password"
+                               required minlength="6"
+                               placeholder="Минимум 6 символов">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Повторите пароль</label>
+                        <input type="password" class="form-control" name="password_confirm"
+                               required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+                </form>
+
+                <p class="text-center mt-3 mb-0 text-muted small">
+                    Уже есть аккаунт? <a href="/login">Войти</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Мои привычки{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 m-0">Мои привычки</h1>
+        {% if habits %}
+            {% set n = habits|length %}
+            {% set last = n % 10 %}
+            {% set last2 = n % 100 %}
+            <div class="text-muted small mt-1">
+                {{ n }}
+                {%- if 10 <= last2 <= 20 %} привычек
+                {%- elif last == 1 %} привычка
+                {%- elif last in [2,3,4] %} привычки
+                {%- else %} привычек{% endif %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        {% if habits %}
+            <form method="get" action="/" class="sort-control m-0">
+                <label for="sort">Сортировка:</label>
+                <select name="sort" id="sort" onchange="this.form.submit()">
+                    <option value="created" {% if sort == 'created' %}selected{% endif %}>по дате</option>
+                    <option value="name" {% if sort == 'name' %}selected{% endif %}>по имени</option>
+                    <option value="streak" {% if sort == 'streak' %}selected{% endif %}>по стрику</option>
+                </select>
+            </form>
+        {% endif %}
+        <a href="/habits/new" class="btn btn-primary">+ Новая привычка</a>
+    </div>
+</div>
+
+{% if not habits %}
+    <div class="empty-state">
+        <div class="empty-state__icon">+</div>
+        <h2 class="h5">Здесь пока пусто</h2>
+        <p class="mb-3">Создай свою первую привычку, чтобы начать отмечать прогресс.</p>
+        <a href="/habits/new" class="btn btn-primary">Создать первую</a>
+    </div>
+{% else %}
+    <div class="row g-3">
+        {% for habit in habits %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card habit-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <span class="habit-color-dot" style="background: {{ habit.color }};"></span>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title mb-1">
+                                    <a href="/habits/{{ habit.id }}" class="habit-name-link">
+                                        {{ habit.name }}
+                                    </a>
+                                </h5>
+                                {% if habit.description %}
+                                    <p class="card-text text-muted small mb-1">{{ habit.description }}</p>
+                                {% endif %}
+                                <div class="habit-meta">
+                                    создана {{ days_since_by_habit[habit.id] | days_ago }}
+                                    {% if streak_by_habit.get(habit.id, 0) > 0 %}
+                                        · стрик {{ streak_by_habit[habit.id] }} {{ streak_by_habit[habit.id]|days_word }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mt-3">
+                            <form action="/habits/{{ habit.id }}/toggle" method="post" class="m-0">
+                                {% if habit.id in today_done %}
+                                    <button class="btn btn-sm btn-success" type="submit">
+                                        ✓ Сделано сегодня
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-outline-primary" type="submit">
+                                        Отметить сегодня
+                                    </button>
+                                {% endif %}
+                            </form>
+
+                            <div class="d-flex gap-1">
+                                <a href="/habits/{{ habit.id }}" class="btn btn-sm btn-outline-secondary">
+                                    Подробнее →
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                                        data-habit-id="{{ habit.id }}"
+                                        data-habit-name="{{ habit.name }}">
+                                    Удалить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

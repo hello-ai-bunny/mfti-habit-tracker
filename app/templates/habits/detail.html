@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ habit.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="/" class="text-decoration-none text-muted small">← к списку привычек</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-start gap-3 mb-2 flex-wrap">
+    <div>
+        <div class="d-flex align-items-center gap-3 mb-1">
+            <span class="habit-color-dot" style="width: 20px; height: 20px; margin-top: 0; background: {{ habit.color }};"></span>
+            <h1 class="h3 m-0">{{ habit.name }}</h1>
+        </div>
+        {% if habit.description %}
+            <p class="text-muted mb-1">{{ habit.description }}</p>
+        {% endif %}
+        <div class="habit-meta">
+            создана {{ (days_since_creation - 1) | days_ago }}
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/habits/{{ habit.id }}/edit" class="btn btn-sm btn-outline-secondary">Изменить</a>
+        <button type="button" class="btn btn-sm btn-outline-danger"
+                data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                data-habit-id="{{ habit.id }}"
+                data-habit-name="{{ habit.name }}">
+            Удалить
+        </button>
+    </div>
+</div>
+
+<div class="row g-3 my-3">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-card__label">Текущий стрик</div>
+            <div class="stat-card__value">{{ streak }}</div>
+            <div class="stat-card__unit">{{ streak|days_word }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-card__label">Лучший стрик</div>
+            <div class="stat-card__value">{{ longest }}</div>
+            <div class="stat-card__unit">{{ longest|days_word }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-card__label">За неделю</div>
+            <div class="stat-card__value">{{ week_done }}<span class="text-subtle">/7</span></div>
+            <div class="stat-card__unit">отмечено</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-card__label">Активность</div>
+            <div class="stat-card__value">{{ active_percent }}<span class="text-subtle">%</span></div>
+            <div class="stat-card__unit">дней с создания</div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h2 class="h5 m-0">Хитмап</h2>
+            <div class="text-muted small">
+                последние 17 недель · всего {{ total }} {{ total|days_word|replace('день','отметка')|replace('дня','отметки')|replace('дней','отметок') }}
+            </div>
+        </div>
+        <div class="heatmap">
+            {% for week in heatmap_weeks %}
+                <div class="heatmap-week">
+                    {% for day in week %}
+                        <div class="heatmap-cell {% if not day.in_range %}out-of-range{% endif %} {% if day.is_today %}today{% endif %}"
+                             {% if day.logged %}style="background: {{ habit.color }};"{% endif %}
+                             title="{{ day.date }}{% if day.logged %} · сделано{% endif %}"></div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="d-flex justify-content-end mt-3">
+            <div class="heatmap-legend">
+                <span>меньше</span>
+                <span class="heatmap-cell"></span>
+                <span class="heatmap-cell" style="background: {{ habit.color }}; opacity: 0.4;"></span>
+                <span class="heatmap-cell" style="background: {{ habit.color }}; opacity: 0.7;"></span>
+                <span class="heatmap-cell" style="background: {{ habit.color }};"></span>
+                <span>больше</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form action="/habits/{{ habit.id }}/toggle" method="post" class="d-inline">
+    {% if today_done %}
+        <button class="btn btn-success" type="submit">✓ Сделано сегодня — снять отметку</button>
+    {% else %}
+        <button class="btn btn-primary" type="submit">Отметить сегодня</button>
+    {% endif %}
+</form>
+{% endblock %}

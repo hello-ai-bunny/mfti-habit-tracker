@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Новая привычка{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <a href="/" class="text-decoration-none text-muted small">← к списку</a>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-1">Новая привычка</h1>
+                <p class="text-muted small mb-4">Опиши, что будешь отслеживать, и выбери цвет.</p>
+
+                {% if error %}
+                    <div class="alert alert-danger py-2">{{ error }}</div>
+                {% endif %}
+
+                <form method="post" action="/habits/new">
+                    <div class="mb-3">
+                        <label class="form-label">Название</label>
+                        <input type="text" class="form-control" name="name"
+                               value="{{ name or '' }}" required maxlength="100"
+                               placeholder="Например: бегать 30 минут" autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Описание
+                            <span class="text-muted fw-normal">— необязательно</span>
+                        </label>
+                        <textarea class="form-control" name="description" rows="2"
+                                  maxlength="500"
+                                  placeholder="Что для тебя значит эта привычка?">{{ description or '' }}</textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Цвет привычки</label>
+                        <input type="color" class="form-control form-control-color" name="color"
+                               value="{{ color or '#4f46e5' }}">
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Создать привычку</button>
+                        <a href="/" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
