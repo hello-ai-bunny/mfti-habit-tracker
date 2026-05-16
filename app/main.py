@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from datetime import date
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.db import get_db, init_db
-from app.models import Habit, User
+from app.models import Habit, HabitLog, User
 from app.routers import auth, habits
 from app.security import get_optional_user
 from app.templates import templates
@@ -47,10 +48,23 @@ def index(
         .order_by(Habit.created_at.desc())
     ).all()
 
+    today = date.today()
+    habit_ids = [h.id for h in user_habits]
+    today_done: set[int] = set()
+    if habit_ids:
+        today_done = set(
+            db.scalars(
+                select(HabitLog.habit_id).where(
+                    HabitLog.date == today,
+                    HabitLog.habit_id.in_(habit_ids),
+                )
+            ).all()
+        )
+
     return templates.TemplateResponse(
         request,
         "habits/dashboard.html",
-        {"user": user, "habits": user_habits},
+        {"user": user, "habits": user_habits, "today_done": today_done},
     )
 
 
