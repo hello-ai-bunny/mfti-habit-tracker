@@ -29,7 +29,19 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end mt-3">
+                        <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
+                            <form action="/habits/{{ habit.id }}/toggle" method="post" class="m-0">
+                                {% if habit.id in today_done %}
+                                    <button class="btn btn-sm btn-success" type="submit">
+                                        ✓ Сделано сегодня
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-outline-primary" type="submit">
+                                        Отметить сегодня
+                                    </button>
+                                {% endif %}
+                            </form>
+
                             <form action="/habits/{{ habit.id }}/delete" method="post" class="m-0"
                                   onsubmit="return confirm('Удалить привычку «{{ habit.name }}»? Все отметки будут удалены.');">
                                 <button class="btn btn-sm btn-outline-danger" type="submit">Удалить</button>
