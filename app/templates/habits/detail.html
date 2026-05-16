@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ habit.name }}{% endblock %}
+
+{% block head %}
+<style>
+    .heatmap {
+        display: flex;
+        gap: 3px;
+        overflow-x: auto;
+        padding: 8px 4px;
+    }
+    .heatmap-week {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .heatmap-cell {
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+        background: #ebedf0;
+        cursor: default;
+    }
+    .heatmap-cell.out-of-range {
+        background: transparent;
+        border: 1px dashed #e5e7eb;
+    }
+    .heatmap-cell.today {
+        outline: 2px solid #0d6efd;
+        outline-offset: 1px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="/" class="text-decoration-none">← к списку привычек</a>
+</div>
+
+<div class="d-flex align-items-center gap-2 mb-1">
+    <span class="d-inline-block rounded-circle"
+          style="width: 18px; height: 18px; background: {{ habit.color }};"></span>
+    <h1 class="h3 m-0">{{ habit.name }}</h1>
+</div>
+{% if habit.description %}
+    <p class="text-muted">{{ habit.description }}</p>
+{% endif %}
+
+<div class="row g-3 my-3">
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small">Текущий стрик</div>
+                <div class="display-6">{{ streak }}</div>
+                <div class="text-muted small">дн.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small">Лучший стрик</div>
+                <div class="display-6">{{ longest }}</div>
+                <div class="text-muted small">дн.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small">За неделю</div>
+                <div class="display-6">{{ week_done }}/7</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small">За месяц</div>
+                <div class="display-6">{{ month_done }}/30</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Хитмап последних 17 недель</h2>
+        <div class="heatmap">
+            {% for week in heatmap_weeks %}
+                <div class="heatmap-week">
+                    {% for day in week %}
+                        <div class="heatmap-cell {% if not day.in_range %}out-of-range{% endif %} {% if day.is_today %}today{% endif %}"
+                             {% if day.logged %}style="background: {{ habit.color }};"{% endif %}
+                             title="{{ day.date }}{% if day.logged %} ✓{% endif %}"></div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="d-flex justify-content-end align-items-center gap-2 mt-2 small text-muted">
+            <span>меньше</span>
+            <span class="heatmap-cell"></span>
+            <span class="heatmap-cell" style="background: {{ habit.color }}; opacity: 0.5;"></span>
+            <span class="heatmap-cell" style="background: {{ habit.color }};"></span>
+            <span>больше</span>
+        </div>
+    </div>
+</div>
+
+<form action="/habits/{{ habit.id }}/toggle" method="post" class="d-inline">
+    {% if today_done %}
+        <button class="btn btn-success" type="submit">✓ Сделано сегодня — снять отметку</button>
+    {% else %}
+        <button class="btn btn-primary" type="submit">Отметить сегодня</button>
+    {% endif %}
+</form>
+{% endblock %}

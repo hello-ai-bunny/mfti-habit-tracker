@@ -13,6 +13,12 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand" href="/">Habit Tracker</a>
+        {% if user %}
+            <div class="d-flex gap-3 me-auto ms-3">
+                <a class="nav-link text-light" href="/">Привычки</a>
+                <a class="nav-link text-light" href="/stats">Статистика</a>
+            </div>
+        {% endif %}
         <div class="ms-auto d-flex align-items-center gap-2">
             {% if user %}
                 <span class="text-light me-2">{{ user.username }}</span>

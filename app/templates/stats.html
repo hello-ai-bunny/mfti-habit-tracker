@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Статистика{% endblock %}
+
+{% block head %}
+<style>
+    .mini-heatmap {
+        display: flex;
+        gap: 2px;
+        overflow-x: auto;
+    }
+    .mini-heatmap-week {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .mini-heatmap-cell {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        background: #ebedf0;
+    }
+    .mini-heatmap-cell.out-of-range {
+        background: transparent;
+    }
+    .mini-heatmap-cell.today {
+        outline: 1px solid #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Статистика</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small">Привычек</div>
+                <div class="display-6">{{ total_habits }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small">Сегодня выполнено</div>
+                <div class="display-6">{{ today_done_count }}/{{ total_habits }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small">Отметок всего</div>
+                <div class="display-6">{{ total_marks }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small">Лучший стрик за всё</div>
+                <div class="display-6">{{ best_streak_overall }}</div>
+                <div class="text-muted small">дн.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<p class="text-muted">Активных дней за последнюю неделю: <strong>{{ active_days_week }}/7</strong></p>
+
+{% if not habit_stats %}
+    <div class="text-center py-5 text-muted">
+        <p>Пока нет привычек.</p>
+        <a href="/habits/new" class="btn btn-primary">Создать первую</a>
+    </div>
+{% else %}
+    <h2 class="h5 mb-3 mt-4">По каждой привычке</h2>
+    <div class="row g-3">
+        {% for s in habit_stats %}
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="d-inline-block rounded-circle"
+                                  style="width: 14px; height: 14px; background: {{ s.habit.color }};"></span>
+                            <a href="/habits/{{ s.habit.id }}" class="text-decoration-none text-dark">
+                                <h5 class="card-title m-0">{{ s.habit.name }}</h5>
+                            </a>
+                        </div>
+
+                        <div class="d-flex gap-3 small text-muted mb-2">
+                            <div>стрик: <strong class="text-dark">{{ s.streak }}</strong></div>
+                            <div>лучший: <strong class="text-dark">{{ s.longest }}</strong></div>
+                            <div>за неделю: <strong class="text-dark">{{ s.week_done }}/7</strong></div>
+                            <div>всего: <strong class="text-dark">{{ s.total }}</strong></div>
+                        </div>
+
+                        <div class="mini-heatmap">
+                            {% for week in s.heatmap %}
+                                <div class="mini-heatmap-week">
+                                    {% for day in week %}
+                                        <div class="mini-heatmap-cell {% if not day.in_range %}out-of-range{% endif %} {% if day.is_today %}today{% endif %}"
+                                             {% if day.logged %}style="background: {{ s.habit.color }};"{% endif %}
+                                             title="{{ day.date }}{% if day.logged %} ✓{% endif %}"></div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

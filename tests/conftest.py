@@ -13,18 +13,36 @@ from app.main import app
 
 
 @pytest.fixture
-def client():
-    """Свежий TestClient с изолированной in-memory БД на каждый тест."""
+def db_engine():
+    """In-memory SQLite, общий между client и db_session фикстурами."""
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    TestSession = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     Base.metadata.create_all(bind=engine)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def db_session(db_engine):
+    """Прямой доступ к сессии БД для тестов, которые вставляют данные напрямую."""
+    SessionLocal = sessionmaker(bind=db_engine, autoflush=False, autocommit=False)
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def client(db_engine):
+    """TestClient, использующий ту же in-memory БД, что и db_session."""
+    SessionLocal = sessionmaker(bind=db_engine, autoflush=False, autocommit=False)
 
     def override_get_db():
-        db = TestSession()
+        db = SessionLocal()
         try:
             yield db
         finally:
@@ -36,7 +54,6 @@ def client():
         yield test_client
     finally:
         app.dependency_overrides.clear()
-        engine.dispose()
 
 
 @pytest.fixture

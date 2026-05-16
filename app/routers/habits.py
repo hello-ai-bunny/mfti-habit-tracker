@@ -8,6 +8,12 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import Habit, HabitLog, User
 from app.security import get_current_user
+from app.stats import (
+    build_heatmap,
+    current_streak,
+    done_in_last_n_days,
+    longest_streak,
+)
 from app.templates import templates
 
 router = APIRouter(prefix="/habits")
@@ -82,6 +88,41 @@ def delete_habit(
     db.delete(habit)
     db.commit()
     return RedirectResponse("/", status_code=303)
+
+
+@router.get("/{habit_id}")
+def habit_detail(
+    habit_id: int,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    habit = db.get(Habit, habit_id)
+    if not habit or habit.user_id != user.id:
+        raise HTTPException(status_code=404)
+
+    logged_dates: set[date] = set(
+        db.scalars(
+            select(HabitLog.date).where(HabitLog.habit_id == habit_id)
+        ).all()
+    )
+    today = date.today()
+
+    return templates.TemplateResponse(
+        request,
+        "habits/detail.html",
+        {
+            "user": user,
+            "habit": habit,
+            "today_done": today in logged_dates,
+            "streak": current_streak(logged_dates, today),
+            "longest": longest_streak(logged_dates),
+            "total": len(logged_dates),
+            "week_done": done_in_last_n_days(logged_dates, today, 7),
+            "month_done": done_in_last_n_days(logged_dates, today, 30),
+            "heatmap_weeks": build_heatmap(logged_dates, today, days_back=119),
+        },
+    )
 
 
 @router.post("/{habit_id}/toggle")
