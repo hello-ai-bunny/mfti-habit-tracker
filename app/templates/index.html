@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-5 mb-3">Habit Tracker</h1>
+    <p class="lead text-muted mb-4">
+        Создавай привычки, отмечай выполнение каждый день,<br>
+        смотри стрики и хитмап активности.
+    </p>
+
+    {% if user %}
+        <p>Привет, <strong>{{ user.username }}</strong>! Дашборд будет тут.</p>
+    {% else %}
+        <a href="/register" class="btn btn-primary btn-lg me-2">Начать</a>
+        <a href="/login" class="btn btn-outline-primary btn-lg">У меня есть аккаунт</a>
+    {% endif %}
+</div>
+{% endblock %}

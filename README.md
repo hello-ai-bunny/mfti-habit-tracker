@@ -23,7 +23,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 
-uvicorn app.main:app --reload
+python -m app.main
 ```
 
 Открыть http://localhost:8000
