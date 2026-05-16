@@ -9,7 +9,7 @@ def _create_habit(client, name="Test", description="", color="#22c55e"):
 def test_dashboard_empty_for_new_user(auth_client):
     r = auth_client.get("/")
     assert r.status_code == 200
-    assert "У тебя пока нет привычек" in r.text
+    assert "Здесь пока пусто" in r.text
 
 
 def test_create_habit_appears_on_dashboard(auth_client):
@@ -47,12 +47,14 @@ def test_create_habit_too_long_description(auth_client):
 
 
 def test_delete_own_habit(auth_client):
-    _create_habit(auth_client, name="To delete")
+    _create_habit(auth_client, name="UniqueDeleteTarget")
     r = auth_client.post("/habits/1/delete", follow_redirects=False)
     assert r.status_code == 303
 
+    auth_client.get("/")
     home = auth_client.get("/")
-    assert "To delete" not in home.text
+    assert "UniqueDeleteTarget" not in home.text
+    assert "Здесь пока пусто" in home.text
 
 
 def test_delete_nonexistent_habit(auth_client):
@@ -133,4 +135,4 @@ def test_user_cannot_see_others_habits_on_dashboard(client):
     )
     home = client.get("/")
     assert "alice secret habit" not in home.text
-    assert "У тебя пока нет привычек" in home.text
+    assert "Здесь пока пусто" in home.text

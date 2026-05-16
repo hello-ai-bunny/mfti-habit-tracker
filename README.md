@@ -1,44 +1,44 @@
 # Habit Tracker
 
-Веб-приложение для отслеживания привычек
+Веб-приложение для отслеживания привычек: создание привычек, отметка выполнения, хитмап и статистика.
+
 
 ## Стек
 
-- **FastAPI** — веб-фреймворк
-- **Jinja2** — серверный рендеринг шаблонов
-- **SQLAlchemy** + **SQLite** — ORM и БД
-- **passlib[bcrypt]** — хеширование паролей
-- **Starlette SessionMiddleware** — сессии в куках
-- **Bootstrap 5** — стили 
+FastAPI · Jinja2 · SQLAlchemy 2.0 · SQLite · bcrypt · Starlette sessions · Bootstrap 5 · pytest
 
 ## Запуск
 
 ```bash
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+source .venv/bin/activate       # Linux/Mac
 
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env           
 
 python -m app.main
 ```
 
-Открыть http://localhost:8000
+Открыть `http://localhost:8000`
 
-## Возможности
+## Тесты
 
+```bash
+pytest
+```
 
-## Структура проекта
+## Структура
 
 ```
-habit-tracker/
-├── app/
-│   ├── main.py            
-│   └── ...
-├── requirements.txt
-├── .env.example
-└── README.md
+app/
+├── main.py            # FastAPI, middleware, 404
+├── db.py              # engine, SessionLocal
+├── models.py          # User, Habit, HabitLog
+├── security.py        # bcrypt, get_current_user
+├── stats.py           # стрики, хитмап
+├── routers/           # auth, habits, stats
+├── static/style.css
+└── templates/
+tests/
 ```
