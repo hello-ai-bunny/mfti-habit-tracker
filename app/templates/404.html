@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Страница не найдена{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-page__code">404</div>
+    <div class="error-page__title">Страница не найдена</div>
+    <p class="error-page__desc">
+        Видимо, такой страницы у нас нет. Возможно, она была удалена,<br>
+        или ссылка просто неверная.
+    </p>
+    <a href="/" class="btn btn-primary">На главную</a>
+</div>
+{% endblock %}

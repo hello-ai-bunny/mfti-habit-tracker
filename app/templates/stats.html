@@ -1,98 +1,108 @@
 {% extends "base.html" %}
 {% block title %}Статистика{% endblock %}
 
-{% block head %}
-<style>
-    .mini-heatmap {
-        display: flex;
-        gap: 2px;
-        overflow-x: auto;
-    }
-    .mini-heatmap-week {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-    .mini-heatmap-cell {
-        width: 10px;
-        height: 10px;
-        border-radius: 2px;
-        background: #ebedf0;
-    }
-    .mini-heatmap-cell.out-of-range {
-        background: transparent;
-    }
-    .mini-heatmap-cell.today {
-        outline: 1px solid #0d6efd;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<h1 class="h3 mb-4">Статистика</h1>
+<div class="mb-4">
+    <h1 class="h3 m-0">Статистика</h1>
+    <div class="text-muted small mt-1">Общая картина по всем твоим привычкам</div>
+</div>
 
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center">
-                <div class="text-muted small">Привычек</div>
-                <div class="display-6">{{ total_habits }}</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-card__label">Привычек</div>
+            <div class="stat-card__value">{{ total_habits }}</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center">
-                <div class="text-muted small">Сегодня выполнено</div>
-                <div class="display-6">{{ today_done_count }}/{{ total_habits }}</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-card__label">Сегодня</div>
+            <div class="stat-card__value">{{ today_done_count }}<span class="text-subtle">/{{ total_habits }}</span></div>
+            <div class="stat-card__unit">выполнено</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center">
-                <div class="text-muted small">Отметок всего</div>
-                <div class="display-6">{{ total_marks }}</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-card__label">Отметок всего</div>
+            <div class="stat-card__value">{{ total_marks }}</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center">
-                <div class="text-muted small">Лучший стрик за всё</div>
-                <div class="display-6">{{ best_streak_overall }}</div>
-                <div class="text-muted small">дн.</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-card__label">Лучший стрик</div>
+            <div class="stat-card__value">{{ best_streak_overall }}</div>
+            <div class="stat-card__unit">за всё время</div>
         </div>
     </div>
 </div>
 
-<p class="text-muted">Активных дней за последнюю неделю: <strong>{{ active_days_week }}/7</strong></p>
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="text-muted small">Активность за неделю</div>
+                <div class="mt-1">
+                    <strong style="font-size: 1.25rem;">{{ active_days_week }}/7</strong>
+                    <span class="text-muted small ms-1">дней с хотя бы одной отметкой</span>
+                </div>
+            </div>
+            <a href="/habits/new" class="btn btn-outline-primary btn-sm">+ Новая привычка</a>
+        </div>
+    </div>
+</div>
 
 {% if not habit_stats %}
-    <div class="text-center py-5 text-muted">
-        <p>Пока нет привычек.</p>
+    <div class="empty-state">
+        <div class="empty-state__icon">+</div>
+        <h2 class="h5">Пока нет привычек</h2>
+        <p class="mb-3">Создай первую привычку, чтобы увидеть статистику.</p>
         <a href="/habits/new" class="btn btn-primary">Создать первую</a>
     </div>
 {% else %}
-    <h2 class="h5 mb-3 mt-4">По каждой привычке</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h2 class="h5 m-0">Активность по всем привычкам</h2>
+                <div class="text-muted small">
+                    интенсивность = сколько привычек отмечено в день
+                </div>
+            </div>
+            <div class="heatmap">
+                {% for week in combined_heatmap %}
+                    <div class="heatmap-week">
+                        {% for day in week %}
+                            {% set count = counts_by_date.get(day.date, 0) %}
+                            {% set intensity = (count / max_count_per_day) if max_count_per_day else 0 %}
+                            <div class="combined-heatmap-cell {% if not day.in_range %}out-of-range{% endif %} {% if day.is_today %}today{% endif %}"
+                                 {% if count > 0 %}style="background: rgba(79, 70, 229, {{ 0.25 + 0.75 * intensity }});"{% endif %}
+                                 title="{{ day.date }}{% if count > 0 %} · {{ count }} привычек{% endif %}"></div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <h2 class="h5 mb-3">По каждой привычке</h2>
     <div class="row g-3">
         {% for s in habit_stats %}
             <div class="col-md-6">
-                <div class="card shadow-sm h-100">
+                <div class="card habit-card h-100">
                     <div class="card-body">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="d-inline-block rounded-circle"
-                                  style="width: 14px; height: 14px; background: {{ s.habit.color }};"></span>
-                            <a href="/habits/{{ s.habit.id }}" class="text-decoration-none text-dark">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="habit-color-dot" style="margin-top: 0; background: {{ s.habit.color }};"></span>
+                            <a href="/habits/{{ s.habit.id }}" class="habit-name-link">
                                 <h5 class="card-title m-0">{{ s.habit.name }}</h5>
                             </a>
+                            {% if s.today_done %}
+                                <span class="badge bg-success-subtle text-success ms-auto">✓ сегодня</span>
+                            {% endif %}
                         </div>
 
-                        <div class="d-flex gap-3 small text-muted mb-2">
+                        <div class="d-flex flex-wrap gap-3 small text-muted mb-3">
                             <div>стрик: <strong class="text-dark">{{ s.streak }}</strong></div>
                             <div>лучший: <strong class="text-dark">{{ s.longest }}</strong></div>
-                            <div>за неделю: <strong class="text-dark">{{ s.week_done }}/7</strong></div>
+                            <div>неделя: <strong class="text-dark">{{ s.week_done }}/7</strong></div>
                             <div>всего: <strong class="text-dark">{{ s.total }}</strong></div>
                         </div>
 
@@ -102,7 +112,7 @@
                                     {% for day in week %}
                                         <div class="mini-heatmap-cell {% if not day.in_range %}out-of-range{% endif %} {% if day.is_today %}today{% endif %}"
                                              {% if day.logged %}style="background: {{ s.habit.color }};"{% endif %}
-                                             title="{{ day.date }}{% if day.logged %} ✓{% endif %}"></div>
+                                             title="{{ day.date }}{% if day.logged %} · сделано{% endif %}"></div>
                                     {% endfor %}
                                 </div>
                             {% endfor %}

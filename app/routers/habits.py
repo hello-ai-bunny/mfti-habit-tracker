@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.flash import flash
 from app.models import Habit, HabitLog, User
 from app.security import get_current_user
 from app.stats import (
@@ -17,6 +18,23 @@ from app.stats import (
 from app.templates import templates
 
 router = APIRouter(prefix="/habits")
+
+
+def _validate_habit_input(name: str, description: str) -> str | None:
+    if not name:
+        return "Название не может быть пустым"
+    if len(name) > 100:
+        return "Название слишком длинное (максимум 100 символов)"
+    if len(description) > 500:
+        return "Описание слишком длинное (максимум 500 символов)"
+    return None
+
+
+def _load_owned_habit(habit_id: int, user: User, db: Session) -> Habit:
+    habit = db.get(Habit, habit_id)
+    if not habit or habit.user_id != user.id:
+        raise HTTPException(status_code=404)
+    return habit
 
 
 @router.get("/new")
@@ -36,21 +54,14 @@ def create_habit(
     request: Request,
     name: str = Form(""),
     description: str = Form(""),
-    color: str = Form("#22c55e"),
+    color: str = Form("#4f46e5"),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     name = name.strip()
     description = description.strip()
 
-    error = None
-    if not name:
-        error = "Название не может быть пустым"
-    elif len(name) > 100:
-        error = "Название слишком длинное (максимум 100 символов)"
-    elif len(description) > 500:
-        error = "Описание слишком длинное (максимум 500 символов)"
-
+    error = _validate_habit_input(name, description)
     if error:
         return templates.TemplateResponse(
             request,
@@ -73,20 +84,71 @@ def create_habit(
     )
     db.add(habit)
     db.commit()
+    flash(request, f"Привычка «{habit.name}» создана", "success")
     return RedirectResponse("/", status_code=303)
+
+
+@router.get("/{habit_id}/edit")
+def edit_habit_form(
+    habit_id: int,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    habit = _load_owned_habit(habit_id, user, db)
+    return templates.TemplateResponse(
+        request,
+        "habits/edit.html",
+        {"user": user, "habit": habit, "error": None},
+    )
+
+
+@router.post("/{habit_id}/edit")
+def edit_habit(
+    habit_id: int,
+    request: Request,
+    name: str = Form(""),
+    description: str = Form(""),
+    color: str = Form("#4f46e5"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    habit = _load_owned_habit(habit_id, user, db)
+    name = name.strip()
+    description = description.strip()
+
+    error = _validate_habit_input(name, description)
+    if error:
+        habit.name = name
+        habit.description = description
+        habit.color = color
+        return templates.TemplateResponse(
+            request,
+            "habits/edit.html",
+            {"user": user, "habit": habit, "error": error},
+            status_code=400,
+        )
+
+    habit.name = name
+    habit.description = description
+    habit.color = color
+    db.commit()
+    flash(request, "Привычка обновлена", "success")
+    return RedirectResponse(f"/habits/{habit_id}", status_code=303)
 
 
 @router.post("/{habit_id}/delete")
 def delete_habit(
     habit_id: int,
+    request: Request,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    habit = db.get(Habit, habit_id)
-    if not habit or habit.user_id != user.id:
-        raise HTTPException(status_code=404)
+    habit = _load_owned_habit(habit_id, user, db)
+    habit_name = habit.name
     db.delete(habit)
     db.commit()
+    flash(request, f"Привычка «{habit_name}» удалена", "info")
     return RedirectResponse("/", status_code=303)
 
 
@@ -97,9 +159,7 @@ def habit_detail(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    habit = db.get(Habit, habit_id)
-    if not habit or habit.user_id != user.id:
-        raise HTTPException(status_code=404)
+    habit = _load_owned_habit(habit_id, user, db)
 
     logged_dates: set[date] = set(
         db.scalars(
@@ -107,6 +167,9 @@ def habit_detail(
         ).all()
     )
     today = date.today()
+
+    days_since_creation = max(1, (today - habit.created_at.date()).days + 1)
+    active_percent = round(len(logged_dates) / days_since_creation * 100)
 
     return templates.TemplateResponse(
         request,
@@ -121,6 +184,8 @@ def habit_detail(
             "week_done": done_in_last_n_days(logged_dates, today, 7),
             "month_done": done_in_last_n_days(logged_dates, today, 30),
             "heatmap_weeks": build_heatmap(logged_dates, today, days_back=119),
+            "days_since_creation": days_since_creation,
+            "active_percent": active_percent,
         },
     )
 
@@ -131,10 +196,7 @@ def toggle_today(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    habit = db.get(Habit, habit_id)
-    if not habit or habit.user_id != user.id:
-        raise HTTPException(status_code=404)
-
+    habit = _load_owned_habit(habit_id, user, db)
     today = date.today()
     existing = db.scalar(
         select(HabitLog).where(

@@ -6,7 +6,7 @@ from app.models import HabitLog
 def test_stats_page_empty(auth_client):
     r = auth_client.get("/stats")
     assert r.status_code == 200
-    assert "Пока нет привычек" in r.text
+    assert "Пока нет привычек" in r.text or "Здесь пока пусто" in r.text
 
 
 def test_stats_page_shows_summary(auth_client):
@@ -16,7 +16,8 @@ def test_stats_page_shows_summary(auth_client):
 
     r = auth_client.get("/stats")
     assert r.status_code == 200
-    assert "1/2" in r.text
+    assert ">1<" in r.text
+    assert "/2<" in r.text
     assert "A" in r.text
     assert "B" in r.text
 

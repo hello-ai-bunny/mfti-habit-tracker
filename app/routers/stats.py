@@ -72,6 +72,14 @@ def stats_page(
         1 for i in range(7) if (today - timedelta(days=i)) in all_dates
     )
 
+    # Общий хитмап: интенсивность = сколько привычек отмечено в этот день
+    counts_by_date: dict[date, int] = {}
+    for dates in logs_by_habit.values():
+        for d in dates:
+            counts_by_date[d] = counts_by_date.get(d, 0) + 1
+    combined_heatmap = build_heatmap(all_dates, today, days_back=119)
+    max_count_per_day = max(counts_by_date.values(), default=1)
+
     return templates.TemplateResponse(
         request,
         "stats.html",
@@ -83,5 +91,8 @@ def stats_page(
             "total_marks": total_marks,
             "best_streak_overall": best_streak_overall,
             "active_days_week": active_days_week,
+            "combined_heatmap": combined_heatmap,
+            "counts_by_date": counts_by_date,
+            "max_count_per_day": max_count_per_day,
         },
     )
