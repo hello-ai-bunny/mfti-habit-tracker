@@ -10,7 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.db import get_db, init_db
 from app.models import Habit, HabitLog, User
-from app.routers import auth, habits
+from app.routers import auth, habits, stats
 from app.security import get_optional_user
 from app.templates import templates
 
@@ -31,6 +31,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(habits.router)
+app.include_router(stats.router)
 
 
 @app.get("/")
