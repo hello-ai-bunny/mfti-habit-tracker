@@ -1,12 +1,21 @@
-import os
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
+from app.db import init_db
+
 load_dotenv()
 
-app = FastAPI(title="Habit Tracker")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="Habit Tracker", lifespan=lifespan)
 
 
 @app.get("/", response_class=HTMLResponse)
